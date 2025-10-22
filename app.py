@@ -33,6 +33,17 @@ def root():
 def health():
     return jsonify({'status': 'healthy'}), 200
 
+
+@app.before_first_request
+def warmup():
+    """Construye y cachea el sistema difuso en el arranque para evitar latencia en la primera evaluación."""
+    try:
+        from src.fuzzyminer import evaluate_supplier
+        evaluate_supplier({'CIS': 3, 'PRP': 3, 'CCT': 3, 'SF': 3, 'SP': 3}, include_details=False)
+        print('[warmup] Fuzzy system initialized')
+    except Exception as e:
+        print(f'[warmup] skipped: {e}')
+
 if __name__ == '__main__':
     # En producción (Render) usa gunicorn: app:app y $PORT; este bloque es para local
     port = int(os.getenv('PORT', '5000'))

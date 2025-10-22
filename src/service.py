@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+import time
 from .fuzzyminer import evaluate_supplier
 
 # Blueprint con nombre coherente al dominio
@@ -17,6 +18,7 @@ def _parse_bool(v):
 
 @evaluate.route('/evaluate', methods=['POST'])
 def evaluate_handler():
+    print('[evaluate] request received')
     try:
         # Obtener parámetros del request
         params = request.get_json(silent=True)
@@ -42,7 +44,10 @@ def evaluate_handler():
         eval_params = {k: params.get(k) for k in required_keys}
         include_details = _parse_bool(params.get('includeDetails', False))
 
+        t0 = time.perf_counter()
         full = evaluate_supplier(eval_params, include_details=include_details)
+        dt_ms = int((time.perf_counter() - t0) * 1000)
+        print(f"[evaluate] dt={dt_ms}ms")
         # Respuesta mínima por defecto: solo label y crisp
         result = full if include_details else {"label": full.get("label"), "crisp": full.get("crisp")}
 
@@ -61,4 +66,17 @@ def evaluate_handler():
             "error": str(e),
             "message": "Error interno del servidor al procesar la solicitud"
         }), 500
+
+
+@evaluate.route('/evaluate', methods=['GET'])
+def evaluate_docs():
+    return jsonify({
+        "message": "Usa POST /evaluate con JSON {CIS, PRP, CCT, SF, SP} y opcional includeDetails",
+        "example": {"CIS": "MED", "PRP": "COS", "CCT": "BUE", "SF": "SOL", "SP": "DEF"}
+    }), 200
+
+
+@evaluate.route('/ping', methods=['POST'])
+def ping():
+    return jsonify({"ok": True}), 200
 
