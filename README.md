@@ -35,6 +35,7 @@ pip install -r requirements.txt
 ## Variables de entorno
 
 - `CORS_TO_FRONTEND_CONECTION` (opcional): origen permitido para CORS. Por defecto `*`.
+- `PORT` (interna de PaaS): algunas plataformas la asignan automáticamente. El contenedor escucha en `0.0.0.0:$PORT`.
 
 Ejemplo (bash):
 
@@ -146,6 +147,14 @@ Hay un `Dockerfile` incluido. Construye y ejecuta:
 docker build -t fuzzyminer-backend .
 docker run --rm -p 5000:5000 fuzzyminer-backend
 ```
+
+### Notas de compatibilidad de dependencias
+
+- Para evitar depender de `git` en la build, este proyecto usa `scikit-fuzzy==0.4.2` desde PyPI con:
+	- `numpy==1.23.5`, `scipy==1.10.1`, `networkx==2.8.8`.
+- Si necesitas `numpy>=2`, usa la versión de `scikit-fuzzy` desde GitHub y añade `git` en la imagen. En ese caso, cambia en `requirements.txt` a:
+	- `numpy>=2`, `scipy>=1.14`, `networkx>=3`, y `scikit-fuzzy @ git+https://github.com/scikit-fuzzy/scikit-fuzzy.git`.
+	- Ajusta el Dockerfile para instalar `git` antes de `pip install`.
 
 ## Notas y resolución de problemas
 
