@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: fuzzyminer-backend
+    env: docker
+    plan: free
+    region: oregon
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: CORS_TO_FRONTEND_CONECTION
+        value: "*"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: GTHREADS
+        value: "4"
+      - key: GUNICORN_TIMEOUT
+        value: "120"
+      # Opcional: limita hilos nativos en instancias pequeñas
+      - key: OMP_NUM_THREADS
+        value: "1"

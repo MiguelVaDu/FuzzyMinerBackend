@@ -148,6 +148,34 @@ docker build -t fuzzyminer-backend .
 docker run --rm -p 5000:5000 fuzzyminer-backend
 ```
 
+## Despliegue en Render
+
+Puedes desplegar este backend en Render como Web Service con Docker.
+
+1) Conecta tu repo a Render y crea un nuevo Web Service.
+2) Environment: Docker (Render usará el `Dockerfile`).
+3) Health Check Path: pon `/health` para que Render valide el contenedor.
+4) Variables de entorno recomendadas:
+	- `CORS_TO_FRONTEND_CONECTION`: origen permitido (por ejemplo, `https://tu-frontend.com`).
+	- `WEB_CONCURRENCY`: número de workers Gunicorn (por defecto 2).
+	- `GTHREADS`: threads por worker (por defecto 4).
+	- `GUNICORN_TIMEOUT`: timeout de request en Gunicorn (por defecto 120 s).
+	- Opcional: `OMP_NUM_THREADS=1` para limitar hilos nativos de NumPy/SciPy en CPUs pequeñas.
+
+El contenedor arranca con Gunicorn usando `--preload`, lo que precalienta el motor difuso en el arranque para evitar latencia en la primera petición. Render establece `PORT` automáticamente; el contenedor ya escucha en `0.0.0.0:$PORT`.
+
+### Notas de tiempo de respuesta y timeouts
+
+- Tras el arranque, las peticiones a `/evaluate` deben ser rápidas. Si la primera petición encuentra el servicio “frío”, el precalentado ya se hizo al iniciar Gunicorn.
+- Si tu instancia entra en reposo y Render la despierta, el primer request volverá a ser atendido tras el arranque, pero el modelo ya se precarga antes del primer request.
+- Si ves “timeout” del lado de Render (límite del proxy), incrementa `GUNICORN_TIMEOUT` y asegúrate de que el cómputo por request no excede el límite del proxy de Render. Si necesitas operaciones de larga duración, considera un job en background con 202 + polling.
+
+### Prueba rápida en Render
+
+1) Verifica `GET /health` (debe responder 200 con `{ "status": "healthy" }`).
+2) Envía un `POST /evaluate` con un JSON válido (ver ejemplos arriba). Deberías obtener `{ success: true, result: { label, crisp } }`.
+
+
 ### Notas de compatibilidad de dependencias
 
 - Para evitar depender de `git` en la build, este proyecto usa `scikit-fuzzy==0.4.2` desde PyPI con:
