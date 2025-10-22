@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+import json
 import time
 from .fuzzyminer import evaluate_supplier
 
@@ -22,6 +23,12 @@ def evaluate_handler():
     try:
         # Obtener parámetros del request
         params = request.get_json(silent=True)
+        # Fallback si el cliente no envía Content-Type: application/json
+        if params is None and request.data:
+            try:
+                params = json.loads(request.data.decode('utf-8'))
+            except Exception:
+                params = None
         if params is None:
             return jsonify({
                 "success": False,
@@ -66,6 +73,12 @@ def evaluate_handler():
             "error": str(e),
             "message": "Error interno del servidor al procesar la solicitud"
         }), 500
+
+
+@evaluate.route('/evaluate', methods=['OPTIONS'])
+def evaluate_options():
+    # Respuesta vacía para preflight CORS
+    return ('', 204)
 
 
 @evaluate.route('/evaluate', methods=['GET'])

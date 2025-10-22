@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from src.service import evaluate
 from dotenv import load_dotenv
@@ -17,7 +17,19 @@ cors_origins = (
     or os.getenv('CORS_TO_FRONTEND_CONECTION')
     or '*'
 )
-CORS(app, resources={r"/*": {'origins': cors_origins}})
+# Configuración CORS explícita para preflight POST desde navegadores
+CORS(
+    app,
+    resources={
+        r"/*": {
+            'origins': cors_origins,
+            'methods': ["GET", "POST", "OPTIONS"],
+            'allow_headers': ["Content-Type", "Authorization", "X-Requested-With"],
+            'expose_headers': ["Content-Type"],
+            'supports_credentials': False,
+        }
+    },
+)
 
 
 @app.get('/')
@@ -50,6 +62,15 @@ def warmup_once():
         print(f'[warmup] skipped: {e}')
     finally:
         _WARMED_UP = True
+
+
+@app.before_request
+def _log_request_basics():
+    # Log muy ligero para diagnosticar problemas de POST/OPTIONS en despliegue
+    try:
+        print(f"[req] {request.method} {request.path} from {request.headers.get('Origin')}")
+    except Exception:
+        pass
 
 if __name__ == '__main__':
     # En producción (Render) usa gunicorn: app:app y $PORT; este bloque es para local
