@@ -13,3 +13,4 @@ scipy==1.10.1
 networkx==2.8.8
 setuptools>=65
 scikit-fuzzy==0.4.2
+matplotlib==3.7.5
